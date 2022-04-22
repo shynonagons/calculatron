@@ -58,7 +58,7 @@ const Home: NextPage = () => {
     ]);
   };
 
-  const handleNewJobFieldChange = ({ target: { id, value } }) => {
+  const handleNewJobFieldChange = ({ target: { id, value } }: { target: HTMLInputElement | HTMLSelectElement }) => {
     const currentValues = newJob ?? {};
     setNewJob({ ...currentValues, [id]: value } as Job);
   };
