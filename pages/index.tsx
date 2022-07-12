@@ -10,38 +10,46 @@ import { Button } from 'rebass';
 
 type Job = {
   id: number;
-  type: 'salary' | 'hourly';
+  type: 'salary' | 'hourly' | 'passive';
   rate: number;
   weeklyHours?: number;
 };
 
+type Expense = {
+  name?: string;
+  cost: number;
+  interval?: number;
+};
+
 const Home: NextPage = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [newJob, setNewJob] = useState<Job>();
+  const [newJob, setNewJob] = useState<Job>({ type: 'hourly' });
   const [jobModalOpen, setJobModalOpen] = useState(false);
   const [weeksOff, setWeeksOff] = useState(4);
-  const [healthCare, setHealthCare] = useState(0);
+  const [expenses, setExpenses] = useState<Record<string, Expense>>({healthCare: {name: 'Healthcare', cost: 1200}});
 
   useEffect(() => {
     setJobs([
-      { id: 1, type: 'hourly', rate: 120, weeklyHours: 10 },
-      { id: 2, type: 'hourly', rate: 160, weeklyHours: 10 },
+      { id: 1, type: 'hourly', rate: 140, weeklyHours: 20 },
+      { id: 2, type: 'salary', rate: 120000 },
+      { id: 2, type: 'passive', rate: 300 },
     ]);
   }, []);
 
+  const expensesTotal = Object.values(expenses).reduce((total, {cost}) => total + +cost, 0);
+
   const hourlyJobs = jobs.filter(({ type }) => type === 'hourly');
   const salaryJobs = jobs.filter(({ type }) => type === 'salary');
+  const passiveIncome = jobs.filter(({ type }) => type === 'passive');
 
-  const salaryTotal = salaryJobs.reduce((memo, { rate }) => memo + rate, 0);
+  const salaryTotal = salaryJobs.reduce((memo, { rate }) => memo + +rate, 0);
 
   const weeklyTotal = Math.round(
-    hourlyJobs.reduce((memo, { rate, weeklyHours = 0 }) => memo + rate * weeklyHours, 0) + salaryTotal / 52,
+    hourlyJobs.reduce((memo, { rate, weeklyHours = 0 }) => memo + +rate * weeklyHours, 0) + salaryTotal / 52,
   );
 
   const monthlyTotal = Math.round(weeklyTotal * 4 + salaryTotal / 12);
-
   const yearlyTotal = weeklyTotal * (52 - weeksOff) + salaryTotal;
-
   const totalHours = hourlyJobs.reduce((total, { weeklyHours = 0 }) => total + weeklyHours, 0);
 
   const handleAddJob = () => {
@@ -63,7 +71,14 @@ const Home: NextPage = () => {
     setNewJob({ ...currentValues, [id]: value } as Job);
   };
 
-  console.log(newJob);
+  const handleChangeExpense = ({ key, value }) => {
+    const newExpenses = { ...expenses };
+    newExpenses[key].cost = value;
+    setExpenses(newExpenses);
+  };
+
+  console.log({expenses})
+
   return (
     <ThemeProvider theme={theme}>
       <div className={styles.container}>
@@ -75,34 +90,51 @@ const Home: NextPage = () => {
 
         <main className={styles.main}>
           <h1 className={styles.title}>Income Calculatron</h1>
-
           <div style={{ width: '60%' }}>
-            {hourlyJobs.map((job) => (
-              <>
-                <Label>
-                  Hourly job {job.id} ({job.weeklyHours} hours/wk @ ${job.rate}/hr)
-                </Label>
-                <div className={styles.row}>
-                  <div className={styles.sliderIcon}>⏰</div>
-                  <Slider
-                    min={0}
-                    max={120}
-                    value={job.weeklyHours || 0}
-                    onChange={({ target: { value } }) => handleUpdateJob(job, 'weeklyHours', parseInt(value, 10))}
-                  />
-                </div>
-                <div className={styles.row}>
-                  <div className={styles.sliderIcon}>💰</div>
-                  <Slider
-                    min={0}
-                    max={300}
-                    value={job.rate || 0}
-                    onChange={({ target: { value } }) => handleUpdateJob(job, 'rate', parseInt(value, 10))}
-                  />
-                </div>
-              </>
-            ))}
-
+            <>
+              {salaryJobs.map((job) => (
+                 <>
+                 <Label>
+                   Salary job (${job.rate.toLocaleString()})
+                 </Label>
+                 <div className={styles.row}>
+                   <div className={styles.sliderIcon}>💰</div>
+                   <Slider
+                     min={0}
+                     max={500000}
+                     step={10}
+                     value={job.rate || 0}
+                     onChange={({ target: { value } }) => handleUpdateJob(job, 'rate', parseInt(value, 10))}
+                   />
+                 </div>
+               </>
+              ))}
+              {hourlyJobs.map((job) => (
+                <>
+                  <Label>
+                    Hourly job ({job.weeklyHours} hours/wk @ ${job.rate}/hr)
+                  </Label>
+                  <div className={styles.row}>
+                    <div className={styles.sliderIcon}>⏰</div>
+                    <Slider
+                      min={0}
+                      max={120}
+                      value={job.weeklyHours || 0}
+                      onChange={({ target: { value } }) => handleUpdateJob(job, 'weeklyHours', parseInt(value, 10))}
+                    />
+                  </div>
+                  <div className={styles.row}>
+                    <div className={styles.sliderIcon}>💰</div>
+                    <Slider
+                      min={0}
+                      max={300}
+                      value={job.rate || 0}
+                      onChange={({ target: { value } }) => handleUpdateJob(job, 'rate', parseInt(value, 10))}
+                    />
+                  </div>
+                </>
+              ))}
+            </>
             <Label htmlFor="weeksOff">Weeks Off ({weeksOff})</Label>
             <div className={styles.row}>
               <div className={styles.sliderIcon}>🌴</div>
@@ -115,14 +147,21 @@ const Home: NextPage = () => {
               />
             </div>
 
-            {/* <Label htmlFor="healthCare">Healthcare</Label>
-            <Slider
-              id="healthCare"
-              min={0}
-              max={10000}
-              value={healthCare}
-              onChange={({ target: { value } }) => setHealthCare(parseInt(value, 10))}
-            /> */}
+            {Object.entries(expenses).map(([key, expense]) => (
+              <>
+                <Label htmlFor={key}>{expense.name} (${expense.cost}/mo)</Label>
+                <div className={styles.row}>
+                <div className={styles.sliderIcon}>💸</div>
+                <Slider
+                  id={key}
+                  min={0}
+                  max={10000}
+                  value={expense.cost}
+                  onChange={({ target: { value } }) => handleChangeExpense({ key, value: parseInt(value, 10) })}
+                />
+                </div>
+              </>
+            ))}
             <Button bg={'blue'} onClick={() => setJobModalOpen(true)}>
               Add job
             </Button>
@@ -168,6 +207,10 @@ const Home: NextPage = () => {
             <div className={styles.card}>
               <h2>Yearly income</h2>
               <p>${yearlyTotal}</p>
+            </div>
+            <div className={styles.card}>
+              <h2>Monthly expenses</h2>
+              <p>${expensesTotal}</p>
             </div>
           </div>
         </main>
