@@ -23,20 +23,25 @@ type Expense = {
 
 const Home: NextPage = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [newJob, setNewJob] = useState<Job>({ type: 'hourly' });
+  const [newJob, setNewJob] = useState<Job>({
+    id: Math.floor(Math.random()),
+    type: 'hourly',
+    rate: 10,
+    weeklyHours: 20,
+  });
   const [jobModalOpen, setJobModalOpen] = useState(false);
   const [weeksOff, setWeeksOff] = useState(4);
-  const [expenses, setExpenses] = useState<Record<string, Expense>>({healthCare: {name: 'Healthcare', cost: 1200}});
+  const [expenses, setExpenses] = useState<Record<string, Expense>>({ healthCare: { name: 'Healthcare', cost: 1200 } });
 
   useEffect(() => {
     setJobs([
       { id: 1, type: 'hourly', rate: 140, weeklyHours: 20 },
       { id: 2, type: 'salary', rate: 120000 },
-      { id: 2, type: 'passive', rate: 300 },
+      { id: 3, type: 'passive', rate: 300 },
     ]);
   }, []);
 
-  const expensesTotal = Object.values(expenses).reduce((total, {cost}) => total + +cost, 0);
+  const expensesTotal = Object.values(expenses).reduce((total, { cost }) => total + +cost, 0);
 
   const hourlyJobs = jobs.filter(({ type }) => type === 'hourly');
   const salaryJobs = jobs.filter(({ type }) => type === 'salary');
@@ -71,13 +76,13 @@ const Home: NextPage = () => {
     setNewJob({ ...currentValues, [id]: value } as Job);
   };
 
-  const handleChangeExpense = ({ key, value }) => {
+  const handleChangeExpense = ({ key, value }: { key: string; value: number }) => {
     const newExpenses = { ...expenses };
     newExpenses[key].cost = value;
     setExpenses(newExpenses);
   };
 
-  console.log({expenses})
+  console.log({ expenses });
 
   return (
     <ThemeProvider theme={theme}>
@@ -93,21 +98,19 @@ const Home: NextPage = () => {
           <div style={{ width: '60%' }}>
             <>
               {salaryJobs.map((job) => (
-                 <>
-                 <Label>
-                   Salary job (${job.rate.toLocaleString()})
-                 </Label>
-                 <div className={styles.row}>
-                   <div className={styles.sliderIcon}>💰</div>
-                   <Slider
-                     min={0}
-                     max={500000}
-                     step={10}
-                     value={job.rate || 0}
-                     onChange={({ target: { value } }) => handleUpdateJob(job, 'rate', parseInt(value, 10))}
-                   />
-                 </div>
-               </>
+                <>
+                  <Label>Salary job (${job.rate.toLocaleString()})</Label>
+                  <div className={styles.row}>
+                    <div className={styles.sliderIcon}>💰</div>
+                    <Slider
+                      min={0}
+                      max={500000}
+                      step={10}
+                      value={job.rate || 0}
+                      onChange={({ target: { value } }) => handleUpdateJob(job, 'rate', parseInt(value, 10))}
+                    />
+                  </div>
+                </>
               ))}
               {hourlyJobs.map((job) => (
                 <>
@@ -149,16 +152,18 @@ const Home: NextPage = () => {
 
             {Object.entries(expenses).map(([key, expense]) => (
               <>
-                <Label htmlFor={key}>{expense.name} (${expense.cost}/mo)</Label>
+                <Label htmlFor={key}>
+                  {expense.name} (${expense.cost}/mo)
+                </Label>
                 <div className={styles.row}>
-                <div className={styles.sliderIcon}>💸</div>
-                <Slider
-                  id={key}
-                  min={0}
-                  max={10000}
-                  value={expense.cost}
-                  onChange={({ target: { value } }) => handleChangeExpense({ key, value: parseInt(value, 10) })}
-                />
+                  <div className={styles.sliderIcon}>💸</div>
+                  <Slider
+                    id={key}
+                    min={0}
+                    max={10000}
+                    value={expense.cost}
+                    onChange={({ target: { value } }) => handleChangeExpense({ key, value: parseInt(value, 10) })}
+                  />
                 </div>
               </>
             ))}
