@@ -49,13 +49,13 @@ const Home: NextPage = () => {
 
   const salaryTotal = salaryJobs.reduce((memo, { rate }) => memo + +rate, 0);
 
-  const weeklyTotal = Math.round(
-    hourlyJobs.reduce((memo, { rate, weeklyHours = 0 }) => memo + +rate * weeklyHours, 0) + salaryTotal / 52,
-  );
+  const weeklyTotal = Math.round(hourlyJobs.reduce((memo, { rate, weeklyHours = 0 }) => memo + +rate * weeklyHours, 0));
+
+  const weeklyTotalWithSalaryIncluded = Math.round(weeklyTotal + salaryTotal / 52);
 
   const monthlyTotal = Math.round(weeklyTotal * 4 + salaryTotal / 12);
   const yearlyTotal = weeklyTotal * (52 - weeksOff) + salaryTotal;
-  const totalHours = hourlyJobs.reduce((total, { weeklyHours = 0 }) => total + weeklyHours, 0);
+  const totalHours = hourlyJobs.reduce((total, { weeklyHours = 0 }) => total + weeklyHours, 0) + salaryJobs.length * 40;
 
   const handleAddJob = () => {
     if (newJob) setJobs([...jobs, { ...newJob, id: jobs.length + 1 }]);
@@ -81,8 +81,6 @@ const Home: NextPage = () => {
     newExpenses[key].cost = value;
     setExpenses(newExpenses);
   };
-
-  console.log({ expenses });
 
   return (
     <ThemeProvider theme={theme}>
@@ -201,7 +199,7 @@ const Home: NextPage = () => {
           <div className={styles.grid}>
             <div className={styles.card}>
               <h2>Weekly income</h2>
-              <p>${weeklyTotal}</p>
+              <p>${weeklyTotalWithSalaryIncluded}</p>
             </div>
 
             <div className={styles.card}>
